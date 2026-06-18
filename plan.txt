@@ -1,0 +1,517 @@
+Phase 3 — Database design
+
+We need simple but useful models.
+
+Products table
+
+Only:
+
+name
+description
+sku
+image
+price
+stock
+status
+timestamps
+Orders table
+
+We still need orders for analytics.
+
+order_number
+customer_name
+customer_email
+channel
+status
+total
+ordered_at
+timestamps
+Order items table
+order_id
+product_id
+product_name
+product_sku
+quantity
+unit_price
+line_total
+timestamps
+
+Even though product is simple, order item should snapshot product name and SKU. This keeps historical order data correct if the product changes later.
+
+Phase 4 — Create models and migrations
+
+Run:
+
+php artisan make:model Product -m
+php artisan make:model Order -m
+php artisan make:model OrderItem -m
+database/migrations/xxxx_create_products_table.php
+public function up(): void
+{
+    Schema::create('products', function (Blueprint $table) {
+        $table->id();
+        $table->string('name');
+        $table->text('description');
+        $table->string('sku')->unique();
+        $table->string('image')->nullable();
+        $table->decimal('price', 10, 2);
+        $table->unsignedInteger('stock')->default(0);
+        $table->string('status')->default('active');
+        $table->timestamps();
+    });
+}
+database/migrations/xxxx_create_orders_table.php
+public function up(): void
+{
+    Schema::create('orders', function (Blueprint $table) {
+        $table->id();
+        $table->string('order_number')->unique();
+        $table->string('customer_name');
+        $table->string('customer_email')->nullable();
+        $table->string('channel')->default('website');
+        $table->string('status')->default('pending');
+        $table->decimal('total', 10, 2)->default(0);
+        $table->timestamp('ordered_at')->nullable();
+        $table->timestamps();
+    });
+}
+database/migrations/xxxx_create_order_items_table.php
+public function up(): void
+{
+    Schema::create('order_items', function (Blueprint $table) {
+        $table->id();
+        $table->foreignId('order_id')->constrained()->cascadeOnDelete();
+        $table->foreignId('product_id')->nullable()->constrained()->nullOnDelete();
+
+        $table->string('product_name');
+        $table->string('product_sku');
+        $table->unsignedInteger('quantity');
+        $table->decimal('unit_price', 10, 2);
+        $table->decimal('line_total', 10, 2);
+
+        $table->timestamps();
+    });
+}
+Phase 5 — Model relationships
+app/Models/Product.php
+<?php
+
+namespace App\Models;
+
+use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\HasMany;
+
+class Product extends Model
+{
+    protected $fillable = [
+        'name',
+        'description',
+        'sku',
+        'image',
+        'price',
+        'stock',
+        'status',
+    ];
+
+    protected $casts = [
+        'price' => 'decimal:2',
+    ];
+
+    public function orderItems(): HasMany
+    {
+        return $this->hasMany(OrderItem::class);
+    }
+
+    public function getIsLowStockAttribute(): bool
+    {
+        return $this->stock > 0 && $this->stock <= 10;
+    }
+
+    public function getIsOutOfStockAttribute(): bool
+    {
+        return $this->stock === 0;
+    }
+}
+app/Models/Order.php
+<?php
+
+namespace App\Models;
+
+use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\HasMany;
+
+class Order extends Model
+{
+    protected $fillable = [
+        'order_number',
+        'customer_name',
+        'customer_email',
+        'channel',
+        'status',
+        'total',
+        'ordered_at',
+    ];
+
+    protected $casts = [
+        'total' => 'decimal:2',
+        'ordered_at' => 'datetime',
+    ];
+
+    public function items(): HasMany
+    {
+        return $this->hasMany(OrderItem::class);
+    }
+}
+app/Models/OrderItem.php
+<?php
+
+namespace App\Models;
+
+use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
+
+class OrderItem extends Model
+{
+    protected $fillable = [
+        'order_id',
+        'product_id',
+        'product_name',
+        'product_sku',
+        'quantity',
+        'unit_price',
+        'line_total',
+    ];
+
+    protected $casts = [
+        'unit_price' => 'decimal:2',
+        'line_total' => 'decimal:2',
+    ];
+
+    public function order(): BelongsTo
+    {
+        return $this->belongsTo(Order::class);
+    }
+
+    public function product(): BelongsTo
+    {
+        return $this->belongsTo(Product::class);
+    }
+}
+Phase 6 — Controllers
+
+Run:
+
+php artisan make:controller DashboardController
+php artisan make:controller ProductController --resource
+php artisan make:controller OrderController
+Phase 7 — Routes
+
+Open:
+
+routes/web.php
+
+Replace with:
+
+<?php
+
+use App\Http\Controllers\DashboardController;
+use App\Http\Controllers\OrderController;
+use App\Http\Controllers\ProductController;
+use Illuminate\Support\Facades\Route;
+
+Route::redirect('/', '/overview');
+
+Route::get('/overview', [DashboardController::class, 'index'])->name('overview');
+
+Route::resource('products', ProductController::class);
+
+Route::get('/orders', [OrderController::class, 'index'])->name('orders.index');
+Route::get('/orders/{order}', [OrderController::class, 'show'])->name('orders.show');
+Route::patch('/orders/{order}/status', [OrderController::class, 'updateStatus'])->name('orders.update-status');
+Phase 8 — DashboardController
+
+Open:
+
+app/Http/Controllers/DashboardController.php
+
+Use:
+
+<?php
+
+namespace App\Http\Controllers;
+
+use App\Models\Order;
+use App\Models\OrderItem;
+use App\Models\Product;
+use Illuminate\Support\Facades\DB;
+
+class DashboardController extends Controller
+{
+    public function index()
+    {
+        $totalOrders = Order::count();
+        $revenue = Order::whereIn('status', ['paid', 'completed'])->sum('total');
+        $unitsSold = OrderItem::sum('quantity');
+        $averageOrderValue = $totalOrders > 0 ? $revenue / $totalOrders : 0;
+
+        $ordersByChannel = Order::query()
+            ->select('channel', DB::raw('COUNT(*) as total'))
+            ->groupBy('channel')
+            ->orderByDesc('total')
+            ->get();
+
+        $topProducts = OrderItem::query()
+            ->select(
+                'product_id',
+                'product_name',
+                'product_sku',
+                DB::raw('SUM(quantity) as units_sold'),
+                DB::raw('SUM(line_total) as revenue')
+            )
+            ->with('product')
+            ->groupBy('product_id', 'product_name', 'product_sku')
+            ->orderByDesc('units_sold')
+            ->limit(5)
+            ->get();
+
+        $recentOrders = Order::query()
+            ->latest('ordered_at')
+            ->limit(5)
+            ->get();
+
+        $salesPerformance = Order::query()
+            ->select(
+                DB::raw('DATE(ordered_at) as date'),
+                DB::raw('SUM(total) as revenue')
+            )
+            ->whereNotNull('ordered_at')
+            ->whereIn('status', ['paid', 'completed'])
+            ->groupBy(DB::raw('DATE(ordered_at)'))
+            ->orderBy('date')
+            ->limit(30)
+            ->get();
+
+        return view('dashboard.index', compact(
+            'totalOrders',
+            'revenue',
+            'unitsSold',
+            'averageOrderValue',
+            'ordersByChannel',
+            'topProducts',
+            'recentOrders',
+            'salesPerformance'
+        ));
+    }
+}
+Phase 9 — ProductController
+
+Open:
+
+app/Http/Controllers/ProductController.php
+
+Use:
+
+<?php
+
+namespace App\Http\Controllers;
+
+use App\Models\Product;
+use Illuminate\Http\Request;
+use Illuminate\Validation\Rule;
+
+class ProductController extends Controller
+{
+    public function index(Request $request)
+    {
+        $query = Product::query();
+
+        $query->when($request->filled('search'), function ($query) use ($request) {
+            $search = $request->string('search');
+
+            $query->where(function ($query) use ($search) {
+                $query->where('name', 'like', "%{$search}%")
+                    ->orWhere('sku', 'like', "%{$search}%");
+            });
+        });
+
+        $query->when($request->filled('status'), function ($query) use ($request) {
+            $query->where('status', $request->status);
+        });
+
+        $query->when($request->stock === 'in_stock', function ($query) {
+            $query->where('stock', '>', 10);
+        });
+
+        $query->when($request->stock === 'low_stock', function ($query) {
+            $query->whereBetween('stock', [1, 10]);
+        });
+
+        $query->when($request->stock === 'out_of_stock', function ($query) {
+            $query->where('stock', 0);
+        });
+
+        match ($request->get('sort', 'newest')) {
+            'oldest' => $query->oldest(),
+            'price_high' => $query->orderByDesc('price'),
+            'price_low' => $query->orderBy('price'),
+            'stock_low' => $query->orderBy('stock'),
+            default => $query->latest(),
+        };
+
+        $products = $query->paginate(7)->withQueryString();
+
+        return view('products.index', compact('products'));
+    }
+
+    public function create()
+    {
+        return view('products.create');
+    }
+
+    public function store(Request $request)
+    {
+        $validated = $request->validate([
+            'name' => ['required', 'string', 'max:255'],
+            'description' => ['required', 'string', 'max:1000'],
+            'sku' => ['required', 'string', 'max:100', 'unique:products,sku'],
+            'image' => ['nullable', 'image', 'max:5120'],
+            'price' => ['required', 'numeric', 'min:0'],
+            'stock' => ['required', 'integer', 'min:0'],
+            'status' => ['required', Rule::in(['active', 'draft', 'inactive'])],
+        ]);
+
+        if ($request->hasFile('image')) {
+            $validated['image'] = $request->file('image')->store('products', 'public');
+        }
+
+        Product::create($validated);
+
+        return redirect()
+            ->route('products.index')
+            ->with('success', 'Product created successfully.');
+    }
+
+    public function edit(Product $product)
+    {
+        return view('products.edit', compact('product'));
+    }
+
+    public function update(Request $request, Product $product)
+    {
+        $validated = $request->validate([
+            'name' => ['required', 'string', 'max:255'],
+            'description' => ['required', 'string', 'max:1000'],
+            'sku' => ['required', 'string', 'max:100', Rule::unique('products', 'sku')->ignore($product->id)],
+            'image' => ['nullable', 'image', 'max:5120'],
+            'price' => ['required', 'numeric', 'min:0'],
+            'stock' => ['required', 'integer', 'min:0'],
+            'status' => ['required', Rule::in(['active', 'draft', 'inactive'])],
+        ]);
+
+        if ($request->hasFile('image')) {
+            $validated['image'] = $request->file('image')->store('products', 'public');
+        }
+
+        $product->update($validated);
+
+        return redirect()
+            ->route('products.index')
+            ->with('success', 'Product updated successfully.');
+    }
+
+    public function destroy(Product $product)
+    {
+        $product->delete();
+
+        return redirect()
+            ->route('products.index')
+            ->with('success', 'Product deleted successfully.');
+    }
+}
+Phase 10 — OrderController
+
+Open:
+
+app/Http/Controllers/OrderController.php
+
+Use:
+
+<?php
+
+namespace App\Http\Controllers;
+
+use App\Models\Order;
+use Illuminate\Http\Request;
+use Illuminate\Validation\Rule;
+
+class OrderController extends Controller
+{
+    public function index(Request $request)
+    {
+        $query = Order::query();
+
+        $query->when($request->filled('search'), function ($query) use ($request) {
+            $search = $request->string('search');
+
+            $query->where(function ($query) use ($search) {
+                $query->where('order_number', 'like', "%{$search}%")
+                    ->orWhere('customer_name', 'like', "%{$search}%")
+                    ->orWhere('customer_email', 'like', "%{$search}%");
+            });
+        });
+
+        $query->when($request->filled('status'), function ($query) use ($request) {
+            $query->where('status', $request->status);
+        });
+
+        $query->when($request->filled('channel'), function ($query) use ($request) {
+            $query->where('channel', $request->channel);
+        });
+
+        $query->when($request->filled('date_from'), function ($query) use ($request) {
+            $query->whereDate('ordered_at', '>=', $request->date_from);
+        });
+
+        $query->when($request->filled('date_to'), function ($query) use ($request) {
+            $query->whereDate('ordered_at', '<=', $request->date_to);
+        });
+
+        $orders = $query
+            ->latest('ordered_at')
+            ->paginate(8)
+            ->withQueryString();
+
+        $totalOrders = Order::count();
+        $pendingOrders = Order::where('status', 'pending')->count();
+        $completedOrders = Order::whereIn('status', ['paid', 'completed'])->count();
+        $cancelledOrders = Order::where('status', 'cancelled')->count();
+
+        return view('orders.index', compact(
+            'orders',
+            'totalOrders',
+            'pendingOrders',
+            'completedOrders',
+            'cancelledOrders'
+        ));
+    }
+
+    public function show(Order $order)
+    {
+        $order->load('items');
+
+        return view('orders.show', compact('order'));
+    }
+
+    public function updateStatus(Request $request, Order $order)
+    {
+        $validated = $request->validate([
+            'status' => ['required', Rule::in(['pending', 'paid', 'completed', 'cancelled'])],
+        ]);
+
+        $order->update($validated);
+
+        return redirect()
+            ->route('orders.show', $order)
+            ->with('success', 'Order status updated successfully.');
+    }
+}
