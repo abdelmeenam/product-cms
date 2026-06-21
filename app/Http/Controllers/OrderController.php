@@ -74,8 +74,8 @@ class OrderController extends Controller
             ->when($dateTo !== '', function (Builder $query) use ($dateTo): void {
                 $query->whereDate('ordered_at', '<=', $dateTo);
             })
-            ->latest('ordered_at')
-            ->latest('id');
+            ->orderByRaw('COALESCE(ordered_at, created_at) DESC')
+            ->orderByDesc('id');
     }
 
     /**
@@ -83,30 +83,44 @@ class OrderController extends Controller
      */
     private function orderMetricCards(): array
     {
-        $totalOrders = Order::query()->count();
-        $pendingOrders = Order::query()->where('status', OrderStatus::Pending->value)->count();
-        $fulfilledOrders = Order::query()->whereIn('status', OrderStatus::fulfilledValues())->count();
-        $cancelledOrders = Order::query()->where('status', OrderStatus::Cancelled->value)->count();
+        $fulfilledStatuses = OrderStatus::fulfilledValues();
+        $fulfilledPlaceholders = implode(', ', array_fill(0, count($fulfilledStatuses), '?'));
+
+        $counts = Order::query()
+            ->selectRaw('COUNT(*) as total')
+            ->selectRaw(
+                'SUM(CASE WHEN status = ? THEN 1 ELSE 0 END) as pending',
+                [OrderStatus::Pending->value]
+            )
+            ->selectRaw(
+                "SUM(CASE WHEN status IN ({$fulfilledPlaceholders}) THEN 1 ELSE 0 END) as fulfilled",
+                $fulfilledStatuses
+            )
+            ->selectRaw(
+                'SUM(CASE WHEN status = ? THEN 1 ELSE 0 END) as cancelled',
+                [OrderStatus::Cancelled->value]
+            )
+            ->first();
 
         return [
             [
                 'label' => 'Total Orders',
-                'value' => $totalOrders,
+                'value' => (int) $counts->total,
                 'color' => 'blue',
             ],
             [
                 'label' => OrderStatus::Pending->label(),
-                'value' => $pendingOrders,
+                'value' => (int) $counts->pending,
                 'color' => 'amber',
             ],
             [
                 'label' => 'Fulfilled',
-                'value' => $fulfilledOrders,
+                'value' => (int) $counts->fulfilled,
                 'color' => 'emerald',
             ],
             [
                 'label' => OrderStatus::Cancelled->label(),
-                'value' => $cancelledOrders,
+                'value' => (int) $counts->cancelled,
                 'color' => 'rose',
             ],
         ];
@@ -129,12 +143,15 @@ class OrderController extends Controller
         $status = $order->status;
         $itemsCount = $order->items->count();
         $unitsCount = (int) $order->items->sum('quantity');
+
         $itemsSubtotal = (float) $order->items->sum('line_total');
         $orderTotal = (float) $order->total;
         $difference = $orderTotal - $itemsSubtotal;
+
         $topItem = $order->items
             ->sortByDesc(fn ($item) => (float) $item->line_total)
             ->first();
+
         $averageUnitPrice = $unitsCount > 0
             ? $itemsSubtotal / $unitsCount
             : 0.0;

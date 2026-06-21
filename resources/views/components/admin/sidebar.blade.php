@@ -64,19 +64,4 @@
         @endforeach
     </nav>
 
-    <div class="p-5">
-        <div class="rounded-3xl border border-slate-200 bg-white p-5 shadow-sm">
-            <div class="mb-4 flex h-10 w-10 items-center justify-center rounded-2xl bg-violet-50 text-violet-600">
-                <svg class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path stroke-width="2" d="M18 10a6 6 0 0 0-12 0v4a3 3 0 0 0 3 3h1v-6H7v-1a5 5 0 0 1 10 0v1h-3v6h1a3 3 0 0 0 3-3v-4z"/>
-                </svg>
-            </div>
-            <p class="font-bold text-slate-950">Need help?</p>
-            <p class="mt-1 text-sm leading-6 text-slate-500">View documentation or contact our support team.</p>
-            <a href="#" class="mt-4 flex items-center justify-center rounded-2xl border border-slate-200 px-4 py-3 text-sm font-bold text-blue-700 hover:bg-blue-50">
-                Visit Help Center
-                <span class="ml-2">→</span>
-            </a>
-        </div>
-    </div>
 </aside>

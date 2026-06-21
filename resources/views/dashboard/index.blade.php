@@ -2,25 +2,36 @@
 
 @section('content')
 <div class="space-y-8">
-    <div class="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
-        <div>
-            <h1 class="text-3xl font-bold tracking-tight text-slate-950">Overview</h1>
-            <p class="mt-2 text-sm text-slate-500">
-                Track catalogue performance across products and orders.
-            </p>
-        </div>
-
-        <button class="inline-flex items-center gap-2 rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm font-bold text-slate-700 shadow-sm">
-            <svg class="h-5 w-5 text-slate-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path stroke-width="2" d="M8 7V3m8 4V3M4 11h16M5 5h14a1 1 0 0 1 1 1v14H4V6a1 1 0 0 1 1-1z"/>
-            </svg>
-            May 12 – May 18, 2025
-            <span>⌄</span>
-        </button>
+    <div>
+        <h1 class="text-3xl font-bold tracking-tight text-slate-950">Overview</h1>
+        <p class="mt-2 text-sm text-slate-500">
+            Track catalogue performance across products and orders.
+        </p>
     </div>
 
     {{-- KPI Cards --}}
     <div class="grid gap-5 md:grid-cols-2 xl:grid-cols-4">
+        <div class="rounded-3xl border border-slate-200 bg-white p-6 shadow-sm">
+            <div class="flex items-center gap-5">
+                <div class="flex h-14 w-14 items-center justify-center rounded-2xl bg-emerald-50 text-emerald-600">
+                    <svg class="h-7 w-7" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-width="2" d="M12 8c-2 0-3 1-3 2s1 2 3 2 3 1 3 2-1 2-3 2m0-10v12"/>
+                        <circle cx="12" cy="12" r="9" stroke-width="2"/>
+                    </svg>
+                </div>
+
+                <div>
+                    <p class="text-sm font-bold text-slate-500">Revenue</p>
+                    <p class="mt-2 text-2xl font-black text-slate-950">
+                        ${{ number_format($revenue, 2) }}
+                    </p>
+                    <p class="mt-2 text-xs font-medium text-slate-400">
+                        From fulfilled orders
+                    </p>
+                </div>
+            </div>
+        </div>
+
         <div class="rounded-3xl border border-slate-200 bg-white p-6 shadow-sm">
             <div class="flex items-center gap-5">
                 <div class="flex h-14 w-14 items-center justify-center rounded-2xl bg-blue-50 text-blue-600">
@@ -34,30 +45,35 @@
 
                 <div>
                     <p class="text-sm font-bold text-slate-500">Total Orders</p>
-                    <p class="mt-2 text-2xl font-black text-slate-950">{{ number_format($totalOrders) }}</p>
-                    <p class="mt-2 text-xs font-bold text-emerald-600">
-                        ↗ 18.7%
-                        <span class="font-medium text-slate-400">vs previous week</span>
+                    <p class="mt-2 text-2xl font-black text-slate-950">
+                        {{ number_format($totalOrders) }}
+                    </p>
+                    <p class="mt-2 text-xs font-medium text-slate-400">
+                        All recorded orders
                     </p>
                 </div>
             </div>
         </div>
 
+
+
+
         <div class="rounded-3xl border border-slate-200 bg-white p-6 shadow-sm">
             <div class="flex items-center gap-5">
-                <div class="flex h-14 w-14 items-center justify-center rounded-2xl bg-emerald-50 text-emerald-600">
+                <div class="flex h-14 w-14 items-center justify-center rounded-2xl bg-violet-50 text-violet-600">
                     <svg class="h-7 w-7" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                        <path stroke-width="2" d="M12 8c-2 0-3 1-3 2s1 2 3 2 3 1 3 2-1 2-3 2m0-10v12"/>
+                        <path stroke-width="2" d="M9 12l2 2 4-4"/>
                         <circle cx="12" cy="12" r="9" stroke-width="2"/>
                     </svg>
                 </div>
 
                 <div>
-                    <p class="text-sm font-bold text-slate-500">Revenue</p>
-                    <p class="mt-2 text-2xl font-black text-slate-950">${{ number_format($revenue, 2) }}</p>
-                    <p class="mt-2 text-xs font-bold text-emerald-600">
-                        ↗ 22.4%
-                        <span class="font-medium text-slate-400">vs previous week</span>
+                    <p class="text-sm font-bold text-slate-500">Fulfilled Orders</p>
+                    <p class="mt-2 text-2xl font-black text-slate-950">
+                        {{ number_format($fulfilledOrdersCount) }}
+                    </p>
+                    <p class="mt-2 text-xs font-medium text-slate-400">
+                        Paid / completed orders
                     </p>
                 </div>
             </div>
@@ -74,30 +90,11 @@
 
                 <div>
                     <p class="text-sm font-bold text-slate-500">Units Sold</p>
-                    <p class="mt-2 text-2xl font-black text-slate-950">{{ number_format($unitsSold) }}</p>
-                    <p class="mt-2 text-xs font-bold text-emerald-600">
-                        ↗ 16.3%
-                        <span class="font-medium text-slate-400">vs previous week</span>
+                    <p class="mt-2 text-2xl font-black text-slate-950">
+                        {{ number_format($unitsSold) }}
                     </p>
-                </div>
-            </div>
-        </div>
-
-        <div class="rounded-3xl border border-slate-200 bg-white p-6 shadow-sm">
-            <div class="flex items-center gap-5">
-                <div class="flex h-14 w-14 items-center justify-center rounded-2xl bg-violet-50 text-violet-600">
-                    <svg class="h-7 w-7" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                        <path stroke-width="2" d="M20 13V7a2 2 0 0 0-2-2h-6L4 13l7 7 9-7z"/>
-                        <circle cx="15" cy="9" r="1"/>
-                    </svg>
-                </div>
-
-                <div>
-                    <p class="text-sm font-bold text-slate-500">Average Order Value</p>
-                    <p class="mt-2 text-2xl font-black text-slate-950">${{ number_format($averageOrderValue, 2) }}</p>
-                    <p class="mt-2 text-xs font-bold text-emerald-600">
-                        ↗ 3.1%
-                        <span class="font-medium text-slate-400">vs previous week</span>
+                    <p class="mt-2 text-xs font-medium text-slate-400">
+                        Fulfilled order units
                     </p>
                 </div>
             </div>
@@ -110,7 +107,7 @@
             <div class="mb-6 flex items-center justify-between">
                 <h2 class="text-lg font-black text-slate-950">Sales Performance</h2>
                 <span class="rounded-xl border border-slate-200 px-3 py-2 text-xs font-bold text-slate-500">
-                    Last 30 days
+                    Fulfilled revenue
                 </span>
             </div>
 
@@ -176,13 +173,17 @@
                     </thead>
 
                     <tbody class="divide-y divide-slate-100">
-                        @foreach($topProducts as $item)
+                        @forelse($topProducts as $item)
                             <tr class="hover:bg-slate-50/70">
                                 <td class="px-4 py-4">
                                     <div class="flex items-center gap-3">
                                         <div class="flex h-12 w-12 items-center justify-center overflow-hidden rounded-2xl bg-slate-100 text-slate-400">
                                             @if($item->product?->image)
-                                                <img src="{{ asset('storage/' . $item->product->image) }}" class="h-full w-full object-cover">
+                                                <img
+                                                    src="{{ asset('storage/' . $item->product->image) }}"
+                                                    alt="{{ $item->product_name }}"
+                                                    class="h-full w-full object-cover"
+                                                >
                                             @else
                                                 <svg class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                                                     <path stroke-width="2" d="M21 19V5a2 2 0 0 0-2-2H5a2 2 0 0 0-2 2v14m18 0H3m18 0l-6-8-4 5-3-4-5 7"/>
@@ -212,10 +213,22 @@
                                 </td>
 
                                 <td class="px-4 py-4">
-                                    <x-admin.status-badge :status="$item->product?->status" />
+                                    @if($item->product?->status)
+                                        <x-admin.status-badge :status="$item->product->status" />
+                                    @else
+                                        <span class="rounded-xl bg-slate-100 px-3 py-1 text-xs font-bold text-slate-500">
+                                            Snapshot
+                                        </span>
+                                    @endif
                                 </td>
                             </tr>
-                        @endforeach
+                        @empty
+                            <tr>
+                                <td colspan="5" class="px-4 py-10 text-center text-sm font-medium text-slate-500">
+                                    No fulfilled product sales yet.
+                                </td>
+                            </tr>
+                        @endforelse
                     </tbody>
                 </table>
             </div>
@@ -230,12 +243,12 @@
             </div>
 
             <div class="space-y-3">
-                @foreach($recentOrders as $order)
+                @forelse($recentOrders as $order)
                     <a href="{{ route('orders.show', $order) }}" class="flex items-center justify-between gap-4 rounded-2xl border border-slate-100 p-4 transition hover:border-blue-200 hover:bg-blue-50/40">
                         <div>
                             <p class="font-black text-slate-950">#{{ $order->order_number }}</p>
                             <p class="mt-1 text-xs text-slate-500">
-                                {{ $order->ordered_at?->format('M d, Y h:i A') }}
+                                {{ $order->ordered_at?->format('M d, Y h:i A') ?? $order->created_at->format('M d, Y h:i A') }}
                             </p>
                         </div>
 
@@ -248,7 +261,11 @@
                             </p>
                         </div>
                     </a>
-                @endforeach
+                @empty
+                    <div class="rounded-2xl border border-slate-100 p-6 text-center text-sm font-medium text-slate-500">
+                        No orders recorded yet.
+                    </div>
+                @endforelse
             </div>
         </div>
     </div>
