@@ -8,12 +8,20 @@
         description: @js(old('description', $product->description)),
         price: @js(old('price', $product->price)),
         stock: @js(old('stock', $product->stock)),
-        status: @js(old('status', $product->status)),
+        status: @js(old('status', $product->status->value)),
+        statusLabels: @js($productStatusLabels),
+        statusBadgeClasses: @js($productStatusBadgeClasses),
         imagePreview: @js($product->image ? asset('storage/' . $product->image) : null),
         previewImage(event) {
             const file = event.target.files[0];
             if (!file) return;
             this.imagePreview = URL.createObjectURL(file);
+        },
+        currentStatusLabel() {
+            return this.statusLabels[this.status] || this.status;
+        },
+        currentStatusClasses() {
+            return this.statusBadgeClasses[this.status] || 'bg-slate-100 text-slate-600 ring-slate-200';
         }
     }"
     class="space-y-8"
@@ -80,9 +88,9 @@
                             <div>
                                 <label class="text-sm font-black text-slate-700">Status</label>
                                 <select x-model="status" name="status" class="mt-3 h-12 w-full rounded-2xl border border-slate-200 px-4 text-sm font-bold text-slate-700 outline-none focus:border-blue-500">
-                                    <option value="active">Active</option>
-                                    <option value="draft">Draft</option>
-                                    <option value="inactive">Inactive</option>
+                                    @foreach ($productStatusOptions as $statusOption)
+                                        <option value="{{ $statusOption['value'] }}">{{ $statusOption['label'] }}</option>
+                                    @endforeach
                                 </select>
                             </div>
                         </div>
@@ -95,7 +103,11 @@
 
                 <div class="mt-6 rounded-3xl border border-slate-200 p-4">
                     <div class="relative overflow-hidden rounded-3xl bg-slate-50">
-                        <span class="absolute left-4 top-4 rounded-xl bg-emerald-50 px-3 py-1 text-xs font-black capitalize text-emerald-700" x-text="status"></span>
+                        <span
+                            class="absolute left-4 top-4 rounded-xl px-3 py-1 text-xs font-black ring-1"
+                            :class="currentStatusClasses()"
+                            x-text="currentStatusLabel()"
+                        ></span>
 
                         <template x-if="imagePreview">
                             <img :src="imagePreview" class="h-72 w-full object-cover">

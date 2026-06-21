@@ -2,6 +2,7 @@
 
 namespace Database\Factories;
 
+use App\enums\OrderChannel;
 use App\Models\Order;
 use Illuminate\Database\Eloquent\Factories\Factory;
 
@@ -21,7 +22,7 @@ class OrderFactory extends Factory
             'order_number' => fake()->unique()->bothify('ORD-########'),
             'customer_name' => fake()->name(),
             'customer_email' => fake()->boolean(85) ? fake()->safeEmail() : null,
-            'channel' => fake()->randomElement(['website', 'instagram', 'retail', 'whatsapp']),
+            'channel' => fake()->randomElement(OrderChannel::values()),
             'status' => fake()->randomElement(['pending', 'paid', 'completed', 'cancelled']),
             'total' => 0,
             'ordered_at' => fake()->dateTimeBetween('-45 days', 'now'),

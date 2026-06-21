@@ -7,6 +7,7 @@
 
     @vite(['resources/css/app.css', 'resources/js/app.js'])
 </head>
+
 <body class="bg-slate-50 text-slate-950 antialiased">
     <div class="min-h-screen lg:flex">
         @include('components.admin.sidebar')
@@ -33,5 +34,7 @@
             </main>
         </div>
     </div>
+
+    @stack('scripts')
 </body>
 </html>

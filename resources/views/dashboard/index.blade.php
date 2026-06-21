@@ -31,10 +31,14 @@
                         <circle cx="18" cy="20" r="1.5"/>
                     </svg>
                 </div>
+
                 <div>
                     <p class="text-sm font-bold text-slate-500">Total Orders</p>
                     <p class="mt-2 text-2xl font-black text-slate-950">{{ number_format($totalOrders) }}</p>
-                    <p class="mt-2 text-xs font-bold text-emerald-600">↗ 18.7% <span class="font-medium text-slate-400">vs previous week</span></p>
+                    <p class="mt-2 text-xs font-bold text-emerald-600">
+                        ↗ 18.7%
+                        <span class="font-medium text-slate-400">vs previous week</span>
+                    </p>
                 </div>
             </div>
         </div>
@@ -47,10 +51,14 @@
                         <circle cx="12" cy="12" r="9" stroke-width="2"/>
                     </svg>
                 </div>
+
                 <div>
                     <p class="text-sm font-bold text-slate-500">Revenue</p>
                     <p class="mt-2 text-2xl font-black text-slate-950">${{ number_format($revenue, 2) }}</p>
-                    <p class="mt-2 text-xs font-bold text-emerald-600">↗ 22.4% <span class="font-medium text-slate-400">vs previous week</span></p>
+                    <p class="mt-2 text-xs font-bold text-emerald-600">
+                        ↗ 22.4%
+                        <span class="font-medium text-slate-400">vs previous week</span>
+                    </p>
                 </div>
             </div>
         </div>
@@ -63,10 +71,14 @@
                         <path stroke-width="2" d="M3 8v8l9 5 9-5V8"/>
                     </svg>
                 </div>
+
                 <div>
                     <p class="text-sm font-bold text-slate-500">Units Sold</p>
                     <p class="mt-2 text-2xl font-black text-slate-950">{{ number_format($unitsSold) }}</p>
-                    <p class="mt-2 text-xs font-bold text-emerald-600">↗ 16.3% <span class="font-medium text-slate-400">vs previous week</span></p>
+                    <p class="mt-2 text-xs font-bold text-emerald-600">
+                        ↗ 16.3%
+                        <span class="font-medium text-slate-400">vs previous week</span>
+                    </p>
                 </div>
             </div>
         </div>
@@ -79,10 +91,14 @@
                         <circle cx="15" cy="9" r="1"/>
                     </svg>
                 </div>
+
                 <div>
                     <p class="text-sm font-bold text-slate-500">Average Order Value</p>
                     <p class="mt-2 text-2xl font-black text-slate-950">${{ number_format($averageOrderValue, 2) }}</p>
-                    <p class="mt-2 text-xs font-bold text-emerald-600">↗ 3.1% <span class="font-medium text-slate-400">vs previous week</span></p>
+                    <p class="mt-2 text-xs font-bold text-emerald-600">
+                        ↗ 3.1%
+                        <span class="font-medium text-slate-400">vs previous week</span>
+                    </p>
                 </div>
             </div>
         </div>
@@ -97,14 +113,19 @@
                     Last 30 days
                 </span>
             </div>
-            <canvas id="salesPerformanceChart" height="115"></canvas>
+
+            <div class="h-72">
+                <canvas id="salesPerformanceChart"></canvas>
+            </div>
         </div>
 
         <div class="rounded-3xl border border-slate-200 bg-white p-6 shadow-sm">
             <h2 class="mb-6 text-lg font-black text-slate-950">Orders by Channel</h2>
 
             <div class="grid items-center gap-6 md:grid-cols-2 xl:grid-cols-1 2xl:grid-cols-2">
-                <canvas id="ordersByChannelChart" height="180"></canvas>
+                <div class="mx-auto h-56 w-56">
+                    <canvas id="ordersByChannelChart"></canvas>
+                </div>
 
                 <div class="space-y-4">
                     @foreach($ordersByChannel as $channel)
@@ -116,9 +137,15 @@
                                     {{ $loop->index === 2 ? 'bg-amber-500' : '' }}
                                     {{ $loop->index >= 3 ? 'bg-violet-500' : '' }}
                                 "></span>
-                                <span class="text-sm font-bold capitalize text-slate-600">{{ $channel->channel }}</span>
+
+                                <span class="text-sm font-bold text-slate-600">
+                                    {{ $channel->channel->label() }}
+                                </span>
                             </div>
-                            <span class="text-sm font-black text-slate-950">{{ number_format($channel->total) }}</span>
+
+                            <span class="text-sm font-black text-slate-950">
+                                {{ number_format($channel->total) }}
+                            </span>
                         </div>
                     @endforeach
                 </div>
@@ -147,27 +174,45 @@
                             <th class="px-4 py-3">Status</th>
                         </tr>
                     </thead>
+
                     <tbody class="divide-y divide-slate-100">
                         @foreach($topProducts as $item)
                             <tr class="hover:bg-slate-50/70">
                                 <td class="px-4 py-4">
                                     <div class="flex items-center gap-3">
-                                        <div class="h-12 w-12 overflow-hidden rounded-2xl bg-slate-100">
+                                        <div class="flex h-12 w-12 items-center justify-center overflow-hidden rounded-2xl bg-slate-100 text-slate-400">
                                             @if($item->product?->image)
                                                 <img src="{{ asset('storage/' . $item->product->image) }}" class="h-full w-full object-cover">
+                                            @else
+                                                <svg class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                                    <path stroke-width="2" d="M21 19V5a2 2 0 0 0-2-2H5a2 2 0 0 0-2 2v14m18 0H3m18 0l-6-8-4 5-3-4-5 7"/>
+                                                </svg>
                                             @endif
                                         </div>
+
                                         <div>
                                             <p class="font-black text-slate-950">{{ $item->product_name }}</p>
-                                            <p class="line-clamp-1 text-xs text-slate-500">{{ $item->product?->description }}</p>
+                                            <p class="line-clamp-1 text-xs text-slate-500">
+                                                {{ $item->product?->description }}
+                                            </p>
                                         </div>
                                     </div>
                                 </td>
-                                <td class="px-4 py-4 font-medium text-slate-500">{{ $item->product_sku }}</td>
-                                <td class="px-4 py-4 font-bold text-slate-950">{{ number_format($item->units_sold) }}</td>
-                                <td class="px-4 py-4 font-bold text-slate-950">${{ number_format($item->revenue, 2) }}</td>
+
+                                <td class="px-4 py-4 font-medium text-slate-500">
+                                    {{ $item->product_sku }}
+                                </td>
+
+                                <td class="px-4 py-4 font-bold text-slate-950">
+                                    {{ number_format($item->units_sold) }}
+                                </td>
+
+                                <td class="px-4 py-4 font-bold text-slate-950">
+                                    ${{ number_format($item->revenue, 2) }}
+                                </td>
+
                                 <td class="px-4 py-4">
-                                    <x-admin.status-badge :status="$item->product?->status ?? 'active'" />
+                                    <x-admin.status-badge :status="$item->product?->status" />
                                 </td>
                             </tr>
                         @endforeach
@@ -189,12 +234,18 @@
                     <a href="{{ route('orders.show', $order) }}" class="flex items-center justify-between gap-4 rounded-2xl border border-slate-100 p-4 transition hover:border-blue-200 hover:bg-blue-50/40">
                         <div>
                             <p class="font-black text-slate-950">#{{ $order->order_number }}</p>
-                            <p class="mt-1 text-xs text-slate-500">{{ $order->ordered_at?->format('M d, Y h:i A') }}</p>
+                            <p class="mt-1 text-xs text-slate-500">
+                                {{ $order->ordered_at?->format('M d, Y h:i A') }}
+                            </p>
                         </div>
 
                         <div class="text-right">
-                            <p class="font-black text-slate-950">${{ number_format($order->total, 2) }}</p>
-                            <p class="mt-1 text-xs font-bold capitalize text-slate-500">{{ $order->channel }}</p>
+                            <p class="font-black text-slate-950">
+                                ${{ number_format($order->total, 2) }}
+                            </p>
+                            <p class="mt-1 text-xs font-bold text-slate-500">
+                                {{ $order->channel->label() }}
+                            </p>
                         </div>
                     </a>
                 @endforeach
@@ -202,56 +253,111 @@
         </div>
     </div>
 </div>
+@endsection
 
+@push('scripts')
 <script>
-    const salesLabels = @json($salesPerformance->pluck('date'));
-    const salesData = @json($salesPerformance->pluck('revenue'));
+    function initOverviewCharts() {
+        const salesCanvas = document.getElementById('salesPerformanceChart');
+        const channelCanvas = document.getElementById('ordersByChannelChart');
 
-    new Chart(document.getElementById('salesPerformanceChart'), {
-        type: 'line',
-        data: {
-            labels: salesLabels,
-            datasets: [{
-                label: 'Revenue',
-                data: salesData,
-                tension: 0.4,
-                fill: true,
-                borderWidth: 3,
-            }]
-        },
-        options: {
-            responsive: true,
-            plugins: {
-                legend: { display: false }
-            },
-            scales: {
-                y: {
-                    ticks: {
-                        callback: value => '$' + value
+        if (!window.Chart) {
+            console.error('Chart.js is not loaded yet.');
+            return;
+        }
+
+        if (salesCanvas && !salesCanvas.dataset.rendered) {
+            salesCanvas.dataset.rendered = 'true';
+
+            const salesLabels = @json($salesPerformance->pluck('label')->values());
+            const salesData = @json($salesPerformance->pluck('value')->values());
+
+            new Chart(salesCanvas, {
+                type: 'line',
+                data: {
+                    labels: salesLabels,
+                    datasets: [{
+                        label: 'Revenue',
+                        data: salesData,
+                        tension: 0.4,
+                        fill: true,
+                        borderColor: '#2563eb',
+                        backgroundColor: 'rgba(37, 99, 235, 0.10)',
+                        borderWidth: 3,
+                        pointRadius: 3,
+                        pointBackgroundColor: '#2563eb',
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: {
+                            display: false
+                        }
+                    },
+                    scales: {
+                        y: {
+                            beginAtZero: true,
+                            ticks: {
+                                callback: value => '$' + value
+                            },
+                            grid: {
+                                color: '#e2e8f0'
+                            }
+                        },
+                        x: {
+                            grid: {
+                                display: false
+                            }
+                        }
                     }
                 }
-            }
+            });
         }
-    });
 
-    const channelLabels = @json($ordersByChannel->pluck('channel'));
-    const channelData = @json($ordersByChannel->pluck('total'));
+        if (channelCanvas && !channelCanvas.dataset.rendered) {
+            channelCanvas.dataset.rendered = 'true';
 
-    new Chart(document.getElementById('ordersByChannelChart'), {
-        type: 'doughnut',
-        data: {
-            labels: channelLabels,
-            datasets: [{
-                data: channelData,
-                borderWidth: 0,
-            }]
-        },
-        options: {
-            cutout: '68%',
-            plugins: {
-                legend: { display: false }
-            }
+            const channelLabels = @json($ordersByChannel->map(fn ($channel) => $channel->channel->label())->values());
+            const channelData = @json($ordersByChannel->pluck('total')->map(fn ($value) => (int) $value)->values());
+
+            new Chart(channelCanvas, {
+                type: 'doughnut',
+                data: {
+                    labels: channelLabels,
+                    datasets: [{
+                        data: channelData,
+                        backgroundColor: [
+                            '#2563eb',
+                            '#10b981',
+                            '#f59e0b',
+                            '#8b5cf6',
+                            '#ef4444',
+                        ],
+                        borderWidth: 0,
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    cutout: '68%',
+                    plugins: {
+                        legend: {
+                            display: false
+                        }
+                    }
+                }
+            });
+        }
+    }
+
+    window.addEventListener('app:ready', initOverviewCharts);
+
+    document.addEventListener('DOMContentLoaded', function () {
+        if (window.Chart) {
+            initOverviewCharts();
         }
     });
 </script>
-@endsection
+@endpush

@@ -2,13 +2,16 @@
 
 namespace App\Models;
 
+use App\enums\OrderChannel;
+use App\enums\OrderStatus;
+use Database\Factories\OrderFactory;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 
 class Order extends Model
 {
-    /** @use HasFactory<\Database\Factories\OrderFactory> */
+    /** @use HasFactory<OrderFactory> */
     use HasFactory;
 
     /**
@@ -28,8 +31,8 @@ class Order extends Model
      * @var array<string, string>
      */
     protected $attributes = [
-        'channel' => 'website',
-        'status' => 'pending',
+        'channel' => OrderChannel::Website->value,
+        'status' => OrderStatus::Pending->value,
         'total' => '0.00',
     ];
 
@@ -39,8 +42,10 @@ class Order extends Model
     protected function casts(): array
     {
         return [
+            'channel' => OrderChannel::class,
             'total' => 'decimal:2',
             'ordered_at' => 'datetime',
+            'status' => OrderStatus::class,
         ];
     }
 

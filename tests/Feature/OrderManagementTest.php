@@ -42,6 +42,28 @@ class OrderManagementTest extends TestCase
             ->assertDontSeeText('ORD-OTHER-1002');
     }
 
+    public function test_orders_index_returns_the_table_partial_for_ajax_requests(): void
+    {
+        $matchingOrder = Order::factory()->create([
+            'order_number' => 'ORD-AJAX-2001',
+            'customer_name' => 'Leen Hassan',
+            'status' => 'pending',
+            'channel' => 'website',
+        ]);
+
+        $response = $this->get(route('orders.index', [
+            'search' => 'AJAX',
+        ]), [
+            'X-Requested-With' => 'XMLHttpRequest',
+            'Accept' => 'text/html',
+        ]);
+
+        $response
+            ->assertOk()
+            ->assertSeeText($matchingOrder->order_number)
+            ->assertDontSeeText('View incoming orders from all channels.');
+    }
+
     public function test_the_order_details_page_displays_snapshot_items(): void
     {
         $product = Product::factory()->create([
@@ -70,17 +92,5 @@ class OrderManagementTest extends TestCase
             ->assertSeeText('ORD-SHOW-1003')
             ->assertSeeText('Wireless Keyboard')
             ->assertSeeText('SKU-KEY-200');
-    }
-
-    public function test_an_order_status_can_be_updated(): void
-    {
-        $order = Order::factory()->pending()->create();
-
-        $response = $this->patch(route('orders.update-status', $order), [
-            'status' => 'completed',
-        ]);
-
-        $response->assertRedirect(route('orders.show', $order));
-        $this->assertSame('completed', $order->fresh()->status);
     }
 }

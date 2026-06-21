@@ -1,4 +1,5 @@
 @php($product = $product ?? null)
+@php($selectedStatus = old('status', $product?->status?->value ?? $productStatusOptions[0]['value']))
 
 <div class="grid gap-6 lg:grid-cols-[1.3fr_0.7fr]">
     <div class="space-y-5">
@@ -24,8 +25,8 @@
             <div>
                 <label for="status" class="mb-2 block text-sm font-semibold text-slate-700">Status</label>
                 <select id="status" name="status" class="h-12 w-full rounded-2xl border border-slate-200 bg-white px-4 text-sm outline-none transition focus:border-blue-500 focus:ring-4 focus:ring-blue-500/10" required>
-                    @foreach (['active', 'draft', 'inactive'] as $status)
-                        <option value="{{ $status }}" @selected(old('status', $product?->status ?? 'active') === $status)>{{ str($status)->headline() }}</option>
+                    @foreach ($productStatusOptions as $statusOption)
+                        <option value="{{ $statusOption['value'] }}" @selected($selectedStatus === $statusOption['value'])>{{ $statusOption['label'] }}</option>
                     @endforeach
                 </select>
                 @error('status') <p class="mt-2 text-sm text-rose-600">{{ $message }}</p> @enderror

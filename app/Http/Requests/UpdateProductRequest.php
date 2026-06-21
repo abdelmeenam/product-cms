@@ -2,27 +2,19 @@
 
 namespace App\Http\Requests;
 
+use App\enums\ProductStatus;
 use App\Models\Product;
-use Illuminate\Contracts\Validation\ValidationRule;
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Support\Str;
 use Illuminate\Validation\Rule;
 
 class UpdateProductRequest extends FormRequest
 {
-    /**
-     * Determine if the user is authorized to make this request.
-     */
     public function authorize(): bool
     {
         return true;
     }
 
-    /**
-     * Get the validation rules that apply to the request.
-     *
-     * @return array<string, ValidationRule|array<mixed>|string>
-     */
     public function rules(): array
     {
         return [
@@ -32,17 +24,14 @@ class UpdateProductRequest extends FormRequest
             'image' => ['nullable', 'image', 'max:5120'],
             'price' => ['required', 'numeric', 'min:0'],
             'stock' => ['required', 'integer', 'min:0'],
-            'status' => ['required', Rule::in(['active', 'draft', 'inactive'])],
+            'status' => ['required', Rule::enum(ProductStatus::class)],
         ];
     }
 
     protected function prepareForValidation(): void
     {
         $this->merge([
-            'name' => $this->string('name')->trim()->value(),
-            'description' => $this->string('description')->trim()->value(),
             'sku' => Str::upper($this->string('sku')->trim()->value()),
-            'status' => Str::lower($this->string('status')->trim()->value()),
         ]);
     }
 }
