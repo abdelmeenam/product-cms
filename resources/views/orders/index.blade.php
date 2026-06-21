@@ -1,6 +1,26 @@
 @extends('layouts.admin', ['title' => 'Orders'])
 
 @section('content')
+@php
+    $orderMetricCards = [
+        [
+            'key' => 'total',
+            'label' => 'Total Orders',
+        ],
+        [
+            'key' => 'pending',
+            'label' => 'Pending',
+        ],
+        [
+            'key' => 'fulfilled',
+            'label' => 'Fulfilled',
+        ],
+        [
+            'key' => 'cancelled',
+            'label' => 'Cancelled',
+        ],
+    ];
+@endphp
 <div
     x-data="ordersTable({
         baseUrl: '{{ route('orders.index') }}',
@@ -20,10 +40,14 @@
         @foreach($orderMetricCards as $card)
             <div class="rounded-3xl border border-slate-200 bg-white p-6 shadow-sm">
                 <p class="text-sm font-bold text-slate-500">{{ $card['label'] }}</p>
-                <p class="mt-3 text-3xl font-black text-slate-950">{{ number_format($card['value']) }}</p>
+                <p class="mt-3 text-3xl font-black text-slate-950">{{ number_format($orderMetricCounts[$card['key']] ?? 0) }}</p>
             </div>
         @endforeach
     </div>
+
+    <p class="text-sm text-slate-500">
+        Metric cards show all orders. The table below follows the current filters.
+    </p>
 
     <div class="rounded-3xl border border-slate-200 bg-white p-5 shadow-sm">
         <div class="grid gap-4 md:grid-cols-2 xl:grid-cols-[1.4fr_.8fr_.8fr_.8fr_.8fr_auto]">

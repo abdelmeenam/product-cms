@@ -4,32 +4,33 @@ namespace App\Http\Controllers;
 
 use App\enums\OrderChannel;
 use App\enums\OrderStatus;
+use App\Http\Requests\IndexOrderRequest;
 use App\Models\Order;
-use Illuminate\Database\Eloquent\Builder;
-use Illuminate\Http\Request;
 use Illuminate\View\View;
+use Illuminate\Http\Response;
+
 
 class OrderController extends Controller
 {
-    private const DEFAULT_PER_PAGE = 8;
-
-    private const PER_PAGE_OPTIONS = [8, 10, 15, 25];
-
-    public function index(Request $request): View|string
+    public function index(IndexOrderRequest $request): View|Response
     {
-        $orders = $this->buildOrderQuery($request)
-            ->paginate($this->resolvePerPage($request))
+        $orders = Order::query()
+            ->withCount('items')
+            ->filterIndex($request->filters())
+            ->orderByRaw('COALESCE(ordered_at, created_at) DESC')
+            ->orderByDesc('id')
+            ->paginate($request->perPage())
             ->withQueryString();
 
         if ($request->ajax()) {
-            return view('orders.partials.table', [
+            return response()->view('orders.partials.table', [
                 'orders' => $orders,
-            ])->render();
+            ]);
         }
 
         return view('orders.index', [
             'orderChannelOptions' => OrderChannel::options(),
-            'orderMetricCards' => $this->orderMetricCards(),
+            'orderMetricCounts' => $this->orderMetricCounts(),
             'orderStatusOptions' => OrderStatus::options(),
             'orders' => $orders,
         ]);
@@ -41,193 +42,47 @@ class OrderController extends Controller
             'items.product:id,name,sku,image,description,status',
         ]);
 
-        return view('orders.show', $this->showViewData($order));
-    }
-
-    private function buildOrderQuery(Request $request): Builder
-    {
-        $search = $request->string('search')->trim()->value();
-        $status = $request->enum('status', OrderStatus::class);
-        $channel = $request->enum('channel', OrderChannel::class);
-        $dateFrom = $request->string('date_from')->trim()->value();
-        $dateTo = $request->string('date_to')->trim()->value();
-
-        return Order::query()
-            ->withCount('items')
-            ->when($search !== '', function (Builder $query) use ($search): void {
-                $query->where(function (Builder $nestedQuery) use ($search): void {
-                    $nestedQuery
-                        ->where('order_number', 'like', "%{$search}%")
-                        ->orWhere('customer_name', 'like', "%{$search}%")
-                        ->orWhere('customer_email', 'like', "%{$search}%");
-                });
-            })
-            ->when($status !== null, function (Builder $query) use ($status): void {
-                $query->where('status', $status->value);
-            })
-            ->when($channel !== null, function (Builder $query) use ($channel): void {
-                $query->where('channel', $channel->value);
-            })
-            ->when($dateFrom !== '', function (Builder $query) use ($dateFrom): void {
-                $query->whereDate('ordered_at', '>=', $dateFrom);
-            })
-            ->when($dateTo !== '', function (Builder $query) use ($dateTo): void {
-                $query->whereDate('ordered_at', '<=', $dateTo);
-            })
-            ->orderByRaw('COALESCE(ordered_at, created_at) DESC')
-            ->orderByDesc('id');
+        return view('orders.show', [
+            'order' => $order,
+        ]);
     }
 
     /**
-     * @return list<array{label: string, value: int, color: string}>
+     * @return array{total: int, pending: int, fulfilled: int, cancelled: int}
      */
-    private function orderMetricCards(): array
+    private function orderMetricCounts(): array
     {
         $fulfilledStatuses = OrderStatus::fulfilledValues();
-        $fulfilledPlaceholders = implode(', ', array_fill(0, count($fulfilledStatuses), '?'));
 
-        $counts = Order::query()
+        $countsQuery = Order::query()
             ->selectRaw('COUNT(*) as total')
             ->selectRaw(
                 'SUM(CASE WHEN status = ? THEN 1 ELSE 0 END) as pending',
                 [OrderStatus::Pending->value]
             )
             ->selectRaw(
-                "SUM(CASE WHEN status IN ({$fulfilledPlaceholders}) THEN 1 ELSE 0 END) as fulfilled",
-                $fulfilledStatuses
-            )
-            ->selectRaw(
                 'SUM(CASE WHEN status = ? THEN 1 ELSE 0 END) as cancelled',
                 [OrderStatus::Cancelled->value]
-            )
-            ->first();
+            );
 
-        return [
-            [
-                'label' => 'Total Orders',
-                'value' => (int) $counts->total,
-                'color' => 'blue',
-            ],
-            [
-                'label' => OrderStatus::Pending->label(),
-                'value' => (int) $counts->pending,
-                'color' => 'amber',
-            ],
-            [
-                'label' => 'Fulfilled',
-                'value' => (int) $counts->fulfilled,
-                'color' => 'emerald',
-            ],
-            [
-                'label' => OrderStatus::Cancelled->label(),
-                'value' => (int) $counts->cancelled,
-                'color' => 'rose',
-            ],
-        ];
-    }
+        if ($fulfilledStatuses === []) {
+            $countsQuery->selectRaw('0 as fulfilled');
+        } else {
+            $fulfilledPlaceholders = implode(', ', array_fill(0, count($fulfilledStatuses), '?'));
 
-    /**
-     * @return array{
-     *     customerEmail: string,
-     *     order: Order,
-     *     orderChannelLabel: string,
-     *     orderFinancialRows: list<array{label: string, value: string}>,
-     *     orderInsights: array{status_note: string, top_item: string, average_unit_price: string},
-     *     orderMetrics: list<array{label: string, value: string, helper: string, tone: string}>,
-     *     orderStatusLabel: string,
-     *     orderStatusValue: string
-     * }
-     */
-    private function showViewData(Order $order): array
-    {
-        $status = $order->status;
-        $itemsCount = $order->items->count();
-        $unitsCount = (int) $order->items->sum('quantity');
-
-        $itemsSubtotal = (float) $order->items->sum('line_total');
-        $orderTotal = (float) $order->total;
-        $difference = $orderTotal - $itemsSubtotal;
-
-        $topItem = $order->items
-            ->sortByDesc(fn ($item) => (float) $item->line_total)
-            ->first();
-
-        $averageUnitPrice = $unitsCount > 0
-            ? $itemsSubtotal / $unitsCount
-            : 0.0;
-
-        $orderFinancialRows = [
-            [
-                'label' => 'Items Subtotal',
-                'value' => '$'.number_format($itemsSubtotal, 2),
-            ],
-        ];
-
-        if (abs($difference) > 0.009) {
-            $orderFinancialRows[] = [
-                'label' => $difference > 0 ? 'Adjustment' : 'Discount',
-                'value' => ($difference > 0 ? '+' : '-').'$'.number_format(abs($difference), 2),
-            ];
+            $countsQuery->selectRaw(
+                "SUM(CASE WHEN status IN ({$fulfilledPlaceholders}) THEN 1 ELSE 0 END) as fulfilled",
+                $fulfilledStatuses
+            );
         }
 
-        $orderFinancialRows[] = [
-            'label' => 'Final Total',
-            'value' => '$'.number_format($orderTotal, 2),
-        ];
-
-        $statusNote = match ($status) {
-            OrderStatus::Paid, OrderStatus::Completed => 'This order is included in fulfilled revenue and product performance analytics.',
-            OrderStatus::Pending => 'This order is waiting for completion and is not counted as fulfilled revenue yet.',
-            OrderStatus::Cancelled => 'This order was cancelled and is excluded from fulfilled revenue.',
-        };
+        $counts = $countsQuery->first();
 
         return [
-            'customerEmail' => $order->customer_email ?: 'No email on file',
-            'order' => $order,
-            'orderChannelLabel' => $order->channel->label(),
-            'orderFinancialRows' => $orderFinancialRows,
-            'orderInsights' => [
-                'status_note' => $statusNote,
-                'top_item' => $topItem?->product_name ?? 'No items recorded',
-                'average_unit_price' => '$'.number_format($averageUnitPrice, 2),
-            ],
-            'orderMetrics' => [
-                [
-                    'label' => 'Order Value',
-                    'value' => '$'.number_format($orderTotal, 2),
-                    'helper' => 'Current order total',
-                    'tone' => 'blue',
-                ],
-                [
-                    'label' => 'Items',
-                    'value' => number_format($itemsCount),
-                    'helper' => 'Unique line items',
-                    'tone' => 'slate',
-                ],
-                [
-                    'label' => 'Units',
-                    'value' => number_format($unitsCount),
-                    'helper' => 'Total quantity sold',
-                    'tone' => 'emerald',
-                ],
-                [
-                    'label' => 'Placed',
-                    'value' => $order->ordered_at?->format('M d, Y') ?? $order->created_at->format('M d, Y'),
-                    'helper' => $order->ordered_at?->format('h:i A') ?? 'Recorded date',
-                    'tone' => 'violet',
-                ],
-            ],
-            'orderStatusLabel' => $status->label(),
-            'orderStatusValue' => $status->value,
+            'total' => (int) $counts->total,
+            'pending' => (int) $counts->pending,
+            'fulfilled' => (int) $counts->fulfilled,
+            'cancelled' => (int) $counts->cancelled,
         ];
-    }
-
-    private function resolvePerPage(Request $request): int
-    {
-        $perPage = $request->integer('per_page', self::DEFAULT_PER_PAGE);
-
-        return in_array($perPage, self::PER_PAGE_OPTIONS, true)
-            ? $perPage
-            : self::DEFAULT_PER_PAGE;
     }
 }

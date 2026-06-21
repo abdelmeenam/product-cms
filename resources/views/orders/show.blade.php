@@ -1,6 +1,33 @@
 @extends('layouts.admin', ['title' => 'Order Details'])
 
 @section('content')
+@php
+    $status = $order->status;
+
+    $itemsCount = $order->items->count();
+    $unitsCount = (int) $order->items->sum('quantity');
+    $itemsSubtotal = (float) $order->items->sum('line_total');
+    $orderTotal = (float) $order->total;
+    $difference = $orderTotal - $itemsSubtotal;
+
+    $topItem = $order->items
+        ->sortByDesc(fn ($item) => (float) $item->line_total)
+        ->first();
+
+    $averageUnitPrice = $unitsCount > 0
+        ? $itemsSubtotal / $unitsCount
+        : 0;
+
+    $statusNote = match ($status) {
+        \App\enums\OrderStatus::Paid,
+        \App\enums\OrderStatus::Completed => 'This order is included in fulfilled revenue and product performance analytics.',
+        \App\enums\OrderStatus::Pending => 'This order is waiting for completion and is not counted as fulfilled revenue yet.',
+        \App\enums\OrderStatus::Cancelled => 'This order was cancelled and is excluded from fulfilled revenue.',
+    };
+
+    $orderDate = $order->ordered_at ?? $order->created_at;
+@endphp
+
 <div class="space-y-8">
     <div class="flex flex-col gap-5 xl:flex-row xl:items-start xl:justify-between">
         <div>
@@ -15,11 +42,11 @@
                     Order #{{ $order->order_number }}
                 </h1>
 
-                <x-admin.status-badge :status="$orderStatusValue" />
+                <x-admin.status-badge :status="$order->status->value" />
 
                 <span class="inline-flex items-center gap-2 rounded-2xl border border-blue-100 bg-blue-50 px-3 py-1 text-xs font-black text-blue-700">
                     <span class="h-2 w-2 rounded-full bg-blue-600"></span>
-                    {{ $orderChannelLabel }}
+                    {{ $order->channel->label() }}
                 </span>
             </div>
 
@@ -29,7 +56,6 @@
         </div>
 
         <div class="flex flex-wrap gap-3">
-
             <a
                 href="{{ route('orders.index') }}"
                 class="inline-flex items-center justify-center rounded-2xl bg-blue-600 px-5 py-3 text-sm font-black text-white shadow-lg shadow-blue-600/20 transition hover:bg-blue-700"
@@ -56,39 +82,70 @@
                 </p>
 
                 <h2 class="mt-3 text-4xl font-black tracking-tight text-slate-950">
-                    ${{ number_format((float) $order->total, 2) }}
+                    ${{ number_format($orderTotal, 2) }}
                 </h2>
 
                 <p class="mt-3 max-w-xl text-sm leading-6 text-slate-500">
-                    {{ $orderInsights['status_note'] }}
+                    {{ $statusNote }}
                 </p>
             </div>
 
             <div class="grid gap-3 sm:grid-cols-2">
-                @foreach($orderMetrics as $metric)
-                    @php
-                        $toneClasses = match ($metric['tone']) {
-                            'blue' => 'bg-blue-50 text-blue-700 ring-blue-100',
-                            'emerald' => 'bg-emerald-50 text-emerald-700 ring-emerald-100',
-                            'violet' => 'bg-violet-50 text-violet-700 ring-violet-100',
-                            default => 'bg-slate-50 text-slate-700 ring-slate-100',
-                        };
-                    @endphp
+                <div class="rounded-3xl bg-blue-50 p-5 text-blue-700 ring-1 ring-blue-100">
+                    <p class="text-xs font-black uppercase tracking-[0.16em] opacity-70">
+                        Order Value
+                    </p>
 
-                    <div class="rounded-3xl p-5 ring-1 {{ $toneClasses }}">
-                        <p class="text-xs font-black uppercase tracking-[0.16em] opacity-70">
-                            {{ $metric['label'] }}
-                        </p>
+                    <p class="mt-3 text-xl font-black">
+                        ${{ number_format($orderTotal, 2) }}
+                    </p>
 
-                        <p class="mt-3 text-xl font-black">
-                            {{ $metric['value'] }}
-                        </p>
+                    <p class="mt-1 text-xs font-semibold opacity-70">
+                        Current order total
+                    </p>
+                </div>
 
-                        <p class="mt-1 text-xs font-semibold opacity-70">
-                            {{ $metric['helper'] }}
-                        </p>
-                    </div>
-                @endforeach
+                <div class="rounded-3xl bg-slate-50 p-5 text-slate-700 ring-1 ring-slate-100">
+                    <p class="text-xs font-black uppercase tracking-[0.16em] opacity-70">
+                        Items
+                    </p>
+
+                    <p class="mt-3 text-xl font-black">
+                        {{ number_format($itemsCount) }}
+                    </p>
+
+                    <p class="mt-1 text-xs font-semibold opacity-70">
+                        Unique line items
+                    </p>
+                </div>
+
+                <div class="rounded-3xl bg-emerald-50 p-5 text-emerald-700 ring-1 ring-emerald-100">
+                    <p class="text-xs font-black uppercase tracking-[0.16em] opacity-70">
+                        Units
+                    </p>
+
+                    <p class="mt-3 text-xl font-black">
+                        {{ number_format($unitsCount) }}
+                    </p>
+
+                    <p class="mt-1 text-xs font-semibold opacity-70">
+                        Total quantity sold
+                    </p>
+                </div>
+
+                <div class="rounded-3xl bg-violet-50 p-5 text-violet-700 ring-1 ring-violet-100">
+                    <p class="text-xs font-black uppercase tracking-[0.16em] opacity-70">
+                        Placed
+                    </p>
+
+                    <p class="mt-3 text-xl font-black">
+                        {{ $orderDate->format('M d, Y') }}
+                    </p>
+
+                    <p class="mt-1 text-xs font-semibold opacity-70">
+                        {{ $order->ordered_at?->format('h:i A') ?? 'Recorded date' }}
+                    </p>
+                </div>
             </div>
         </div>
     </section>
@@ -104,7 +161,7 @@
                 </div>
 
                 <span class="rounded-2xl bg-slate-100 px-4 py-2 text-sm font-black text-slate-700">
-                    {{ number_format($order->items->count()) }} items
+                    {{ number_format($itemsCount) }} items
                 </span>
             </div>
 
@@ -204,24 +261,30 @@
                     </p>
 
                     <p class="mt-2 text-sm text-slate-500">
-                        {{ $customerEmail }}
+                        {{ $order->customer_email ?: 'No email on file' }}
                     </p>
                 </div>
 
                 <div class="mt-5 grid gap-3">
                     <div class="flex items-center justify-between rounded-2xl border border-slate-100 px-4 py-3">
                         <span class="text-sm font-semibold text-slate-500">Channel</span>
-                        <span class="text-sm font-black text-slate-950">{{ $orderChannelLabel }}</span>
+                        <span class="text-sm font-black text-slate-950">
+                            {{ $order->channel->label() }}
+                        </span>
                     </div>
 
                     <div class="flex items-center justify-between rounded-2xl border border-slate-100 px-4 py-3">
                         <span class="text-sm font-semibold text-slate-500">Status</span>
-                        <span class="text-sm font-black text-slate-950">{{ $orderStatusLabel }}</span>
+                        <span class="text-sm font-black text-slate-950">
+                            {{ $order->status->label() }}
+                        </span>
                     </div>
 
                     <div class="flex items-center justify-between rounded-2xl border border-slate-100 px-4 py-3">
                         <span class="text-sm font-semibold text-slate-500">Recorded</span>
-                        <span class="text-sm font-black text-slate-950">{{ $order->created_at->format('M d, Y') }}</span>
+                        <span class="text-sm font-black text-slate-950">
+                            {{ $order->created_at->format('M d, Y') }}
+                        </span>
                     </div>
                 </div>
             </section>
@@ -236,17 +299,37 @@
                 </div>
 
                 <div class="mt-6 space-y-4">
-                    @foreach($orderFinancialRows as $row)
+                    <div class="flex items-center justify-between gap-4 text-sm">
+                        <span class="font-semibold text-slate-500">
+                            Items Subtotal
+                        </span>
+
+                        <span class="text-base font-black text-slate-950">
+                            ${{ number_format($itemsSubtotal, 2) }}
+                        </span>
+                    </div>
+
+                    @if(abs($difference) > 0.009)
                         <div class="flex items-center justify-between gap-4 text-sm">
                             <span class="font-semibold text-slate-500">
-                                {{ $row['label'] }}
+                                {{ $difference > 0 ? 'Adjustment' : 'Discount' }}
                             </span>
 
                             <span class="text-base font-black text-slate-950">
-                                {{ $row['value'] }}
+                                {{ $difference > 0 ? '+' : '-' }}${{ number_format(abs($difference), 2) }}
                             </span>
                         </div>
-                    @endforeach
+                    @endif
+
+                    <div class="flex items-center justify-between gap-4 text-sm">
+                        <span class="font-semibold text-slate-500">
+                            Final Total
+                        </span>
+
+                        <span class="text-base font-black text-slate-950">
+                            ${{ number_format($orderTotal, 2) }}
+                        </span>
+                    </div>
                 </div>
 
                 <div class="mt-6 rounded-3xl bg-blue-50 p-5">
@@ -255,11 +338,11 @@
                     </p>
 
                     <p class="mt-2 font-black text-blue-950">
-                        {{ $orderInsights['top_item'] }}
+                        {{ $topItem?->product_name ?? 'No items recorded' }}
                     </p>
 
                     <p class="mt-1 text-sm font-semibold text-blue-700">
-                        Avg. unit price: {{ $orderInsights['average_unit_price'] }}
+                        Avg. unit price: ${{ number_format($averageUnitPrice, 2) }}
                     </p>
                 </div>
             </section>
