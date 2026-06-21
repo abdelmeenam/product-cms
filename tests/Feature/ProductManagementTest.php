@@ -2,6 +2,7 @@
 
 namespace Tests\Feature;
 
+use App\enums\ProductStatus;
 use App\Models\Product;
 use Illuminate\Foundation\Testing\LazilyRefreshDatabase;
 use Illuminate\Http\UploadedFile;
@@ -91,7 +92,7 @@ class ProductManagementTest extends TestCase
         $this->assertFileDoesNotExist($diskRoot.DIRECTORY_SEPARATOR.'products/old-image.jpg');
         $this->assertFileExists($diskRoot.DIRECTORY_SEPARATOR.$product->image);
         $this->assertSame('Updated Product', $product->name);
-        $this->assertSame('inactive', $product->status);
+        $this->assertSame(ProductStatus::Inactive, $product->status);
     }
 
     private function useTemporaryPublicDisk(): string

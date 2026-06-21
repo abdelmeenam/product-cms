@@ -29,16 +29,6 @@
         </div>
 
         <div class="flex flex-wrap gap-3">
-            <button
-                type="button"
-                onclick="window.print()"
-                class="inline-flex items-center justify-center gap-2 rounded-2xl border border-slate-200 bg-white px-5 py-3 text-sm font-black text-slate-700 shadow-sm transition hover:bg-slate-50"
-            >
-                <svg class="h-5 w-5 text-slate-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path stroke-width="2" d="M7 8V4h10v4M7 17H5a2 2 0 0 1-2-2v-4a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2v4a2 2 0 0 1-2 2h-2M7 14h10v6H7v-6z"/>
-                </svg>
-                Print
-            </button>
 
             <a
                 href="{{ route('orders.index') }}"

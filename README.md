@@ -1,59 +1,191 @@
-<p align="center"><a href="https://laravel.com" target="_blank"><img src="https://raw.githubusercontent.com/laravel/art/master/logo-lockup/5%20SVG/2%20CMYK/1%20Full%20Color/laravel-logolockup-cmyk-red.svg" width="400" alt="Laravel Logo"></a></p>
+# Product CMS
 
-<p align="center">
-<a href="https://github.com/laravel/framework/actions"><img src="https://github.com/laravel/framework/workflows/tests/badge.svg" alt="Build Status"></a>
-<a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/dt/laravel/framework" alt="Total Downloads"></a>
-<a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/v/laravel/framework" alt="Latest Stable Version"></a>
-<a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/l/laravel/framework" alt="License"></a>
-</p>
+This is a small Laravel product and order management dashboard. The main goal was to build a clean admin experience for managing products, viewing orders, checking order details, and working with seeded demo data.
 
-## About Laravel
+I kept the first version focused on the requested scope instead of adding extra business modules too early. The structure should still be easy to extend later if more rules are added around customers, refunds, discounts, inventory, or permissions.
 
-Laravel is a web application framework with expressive, elegant syntax. We believe development must be an enjoyable and creative experience to be truly fulfilling. Laravel takes the pain out of development by easing common tasks used in many web projects, such as:
+## Stack Used
 
-- [Simple, fast routing engine](https://laravel.com/docs/routing).
-- [Powerful dependency injection container](https://laravel.com/docs/container).
-- Multiple back-ends for [session](https://laravel.com/docs/session) and [cache](https://laravel.com/docs/cache) storage.
-- Expressive, intuitive [database ORM](https://laravel.com/docs/eloquent).
-- Database agnostic [schema migrations](https://laravel.com/docs/migrations).
-- [Robust background job processing](https://laravel.com/docs/queues).
-- [Real-time event broadcasting](https://laravel.com/docs/broadcasting).
+- PHP 8.2
+- Laravel 12
+- Tailwind CSS 4
+- Alpine.js 3
+- Chart.js 4
 
-Laravel is accessible, powerful, and provides tools required for large, robust applications.
+## Setup Instructions
 
-## Learning Laravel
+1. Install PHP dependencies:
 
-Laravel has the most extensive and thorough [documentation](https://laravel.com/docs) and video tutorial library of all modern web application frameworks, making it a breeze to get started with the framework. You can also check out [Laravel Learn](https://laravel.com/learn), where you will be guided through building a modern Laravel application.
+```bash
+composer install
+```
 
-If you don't feel like reading, [Laracasts](https://laracasts.com) can help. Laracasts contains thousands of video tutorials on a range of topics including Laravel, modern PHP, unit testing, and JavaScript. Boost your skills by digging into our comprehensive video library.
+2. Create the environment file:
 
-## Laravel Sponsors
+```bash
+copy .env.example .env
+```
 
-We would like to extend our thanks to the following sponsors for funding Laravel development. If you are interested in becoming a sponsor, please visit the [Laravel Partners program](https://partners.laravel.com).
+3. Generate the application key:
 
-### Premium Partners
+```bash
+php artisan key:generate
+```
 
-- **[Vehikl](https://vehikl.com)**
-- **[Tighten Co.](https://tighten.co)**
-- **[Kirschbaum Development Group](https://kirschbaumdevelopment.com)**
-- **[64 Robots](https://64robots.com)**
-- **[Curotec](https://www.curotec.com/services/technologies/laravel)**
-- **[DevSquad](https://devsquad.com/hire-laravel-developers)**
-- **[Redberry](https://redberry.international/laravel-development)**
-- **[Active Logic](https://activelogic.com)**
+4. Configure the database in `.env`.
 
-## Contributing
+The default local setup can use SQLite, but MySQL can also be configured.
 
-Thank you for considering contributing to the Laravel framework! The contribution guide can be found in the [Laravel documentation](https://laravel.com/docs/contributions).
+5. Run migrations and seeders:
 
-## Code of Conduct
+```bash
+php artisan migrate --seed
+```
 
-In order to ensure that the Laravel community is welcoming to all, please review and abide by the [Code of Conduct](https://laravel.com/docs/contributions#code-of-conduct).
+6. Install frontend dependencies:
 
-## Security Vulnerabilities
+```bash
+npm install
+```
 
-If you discover a security vulnerability within Laravel, please send an e-mail to Taylor Otwell via [taylor@laravel.com](mailto:taylor@laravel.com). All security vulnerabilities will be promptly addressed.
+7. Build frontend assets:
 
-## License
+```bash
+npm run build
+```
 
-The Laravel framework is open-sourced software licensed under the [MIT license](https://opensource.org/licenses/MIT).
+8. Create the public storage symlink for uploaded product images:
+
+```bash
+php artisan storage:link
+```
+
+9. Start the local development environment:
+
+```bash
+composer run dev
+```
+
+## Running Tests
+
+Run the full test suite:
+
+```bash
+php artisan test --compact
+```
+
+Run a single test file:
+
+```bash
+php artisan test --compact tests/Feature/ProductManagementTest.php
+```
+
+## Decisions Made
+
+### 1. Simple models first
+
+I built the first version around `Product`, `Order`, and `OrderItem`. I did not add extra models for customers, invoices, discounts, or shipping because the task did not include enough business rules for those areas.
+
+The current models are enough for the dashboard, product CRUD, order listing, order details, and seeded demo data. If the project continues, I would expand the model gradually instead of guessing the final business flow from the start.
+
+### 2. Seeded orders instead of full order CRUD
+
+I used factories and seeders for orders instead of building full order creation and editing. My reason was simple: order creation usually depends on many rules such as customer type, payment flow, refund policy, sales channel, stock reservation, and delivery logic.
+
+Since those rules were not fully defined, I preferred to create realistic sample data that supports the dashboard and order pages without inventing behavior that might be wrong later.
+
+### 3. Blade and Tailwind for the UI
+
+I used Blade and Tailwind instead of adding a ready-made admin package. This gave me better control over the layout and kept the code closer to the actual task.
+
+The UI work focused on the dashboard, product list, product form, order list, order details, filters, status labels, pagination, and basic responsive behavior.
+
+### 4. Enums for repeated values
+
+I used enums for repeated values like product status, order status, and order channel. This made the code cleaner because the same values are reused in filters, labels, seeders, and views.
+
+### 5. Avoided adding unclear business modules
+
+I did not add permissions, invoices, discounts, advanced inventory, multi-currency, or refund logic in this version. These features are important, but they need client input first.
+
+For this submission, I focused more on making the base clean and understandable.
+
+## Questions I Would Ask the Client Before Writing More Code
+
+1. Are the products simple products only, or do they have variants like size, color, or material?
+
+2. Do products need categories, brands, tags, or collections?
+
+3. Do you sell bundles or kits made from multiple products?
+
+4. Which sales channels should be supported?
+   For example: website, Instagram, WhatsApp, retail, marketplace, or manual orders.
+
+5. What should happen when an order is refunded?
+   Do you need full refunds, partial refunds, replacements, exchanges, or all of them?
+
+6. How should VAT or tax be handled?
+   Is tax included in the product price, added later, or different by country?
+
+7. Do you need multi-country or multi-currency support?
+
+8. How should discounts work?
+   Coupon codes, automatic discounts, campaign discounts, or customer-group pricing?
+
+9. Do you need roles and permissions?
+   For example: admin, manager, warehouse staff, support, or finance.
+
+10. What should the shipping flow include?
+    Courier integration, tracking number, pickup, local delivery, warehouse status, or shipment history.
+
+11. Do customers need accounts, or is this mainly an internal admin dashboard?
+
+## What I Would Build Next With Another Two Days
+
+With two more days, I would focus on the areas that make the system closer to a real back-office tool:
+
+1. Add soft deletes where they make sense.
+
+2. Add a proper customer model instead of keeping customer information only on orders.
+
+3. Improve stock handling, especially around pending and paid orders.
+
+4. Add low-stock and out-of-stock alerts.
+
+5. Add a proper sales channel table if channels need different behavior.
+
+6. Add the first version of discounts.
+
+7. Add product import/export and bulk actions.
+
+8. Add roles and permissions.
+
+9. Add invoice generation.
+
+10. Improve dashboard reports, especially sales by date, channel, and product.
+
+## Weakest Part of My Submission
+
+The weakest part is the business logic depth.
+
+The project has a clean base, but it is not a full production back office yet. Areas like inventory reservation, refunds, tax, customer lifecycle, discounts, permissions, and invoices are still basic or not implemented.
+
+I made this tradeoff intentionally because I did not want to hardcode rules without asking the client first. So I would describe this version as a strong starting point, not a complete commercial system.
+
+## Time Spent
+
+I spent around 30 minutes at the beginning analyzing the task before writing code. I used a simple empty text file to break the work down into smaller parts, including migrations, models, functions, possible client questions, and future features.
+
+After that, I worked through the implementation in stages: backend structure, seeders, UI, cleanup, and testing/verification.
+
+Overall, the task took around 3 to 4 hours.
+
+## AI Usage
+
+I used AI tools to support the work, but not to replace the technical decisions.
+
+I used ChatGPT to review my initial plan, organize my thoughts, and improve some written explanations. I also used it for UI/UX inspiration while thinking about the dashboard layout.
+
+During development, I used Laravel Boost and Codex as coding assistants to speed up implementation and refinement.
+
+The final structure, tradeoffs, and integration decisions were still made based on the project requirements and the actual Laravel codebase.
