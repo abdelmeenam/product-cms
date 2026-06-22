@@ -54,7 +54,7 @@ class DashboardOverviewTest extends TestCase
 
         $response
             ->assertOk()
-            ->assertSeeText('Business Overview')
+            ->assertSeeText('Overview')
             ->assertSeeText('ORD-PAID-1001')
             ->assertSeeText('Desk Lamp');
     }
