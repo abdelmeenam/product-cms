@@ -47,9 +47,6 @@ class OrderController extends Controller
         ]);
     }
 
-    /**
-     * @return array{total: int, pending: int, fulfilled: int, cancelled: int}
-     */
     private function orderMetricCounts(): array
     {
         $fulfilledStatuses = OrderStatus::fulfilledValues();

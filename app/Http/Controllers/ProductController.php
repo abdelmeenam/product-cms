@@ -113,9 +113,6 @@ class ProductController extends Controller
         }
     }
 
-    /**
-     * @return array<string, string>
-     */
     private function productStatusLabels(): array
     {
         return collect(ProductStatus::options())
@@ -123,9 +120,6 @@ class ProductController extends Controller
             ->all();
     }
 
-    /**
-     * @return array<string, string>
-     */
     private function productStatusBadgeClasses(): array
     {
         return collect(ProductStatus::options())
