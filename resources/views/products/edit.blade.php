@@ -8,20 +8,26 @@
         description: @js(old('description', $product->description)),
         price: @js(old('price', $product->price)),
         stock: @js(old('stock', $product->stock)),
+        statusOptions: @js($productStatusOptions),
         status: @js(old('status', $product->status->value)),
-        statusLabels: @js($productStatusLabels),
-        statusBadgeClasses: @js($productStatusBadgeClasses),
         imagePreview: @js($product->image ? asset('storage/' . $product->image) : null),
         previewImage(event) {
             const file = event.target.files[0];
             if (!file) return;
             this.imagePreview = URL.createObjectURL(file);
         },
+        currentStatusOption() {
+            return this.statusOptions.find((statusOption) => statusOption.value === this.status) || null;
+        },
         currentStatusLabel() {
-            return this.statusLabels[this.status] || this.status;
+            const statusOption = this.currentStatusOption();
+
+            return statusOption ? statusOption.label : this.status;
         },
         currentStatusClasses() {
-            return this.statusBadgeClasses[this.status] || 'bg-slate-100 text-slate-600 ring-slate-200';
+            const statusOption = this.currentStatusOption();
+
+            return statusOption ? statusOption.badge_classes : 'bg-slate-100 text-slate-600 ring-slate-200';
         }
     }"
     class="space-y-8"

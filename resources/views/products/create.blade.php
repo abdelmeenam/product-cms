@@ -8,20 +8,26 @@
         description: '',
         price: '',
         stock: '',
+        statusOptions: @js($productStatusOptions),
         status: @js(old('status', $productStatusOptions[0]['value'])),
-        statusLabels: @js($productStatusLabels),
-        statusBadgeClasses: @js($productStatusBadgeClasses),
         imagePreview: null,
         previewImage(event) {
             const file = event.target.files[0];
             if (!file) return;
             this.imagePreview = URL.createObjectURL(file);
         },
+        currentStatusOption() {
+            return this.statusOptions.find((statusOption) => statusOption.value === this.status) || null;
+        },
         currentStatusLabel() {
-            return this.statusLabels[this.status] || this.status;
+            const statusOption = this.currentStatusOption();
+
+            return statusOption ? statusOption.label : this.status;
         },
         currentStatusClasses() {
-            return this.statusBadgeClasses[this.status] || 'bg-slate-100 text-slate-600 ring-slate-200';
+            const statusOption = this.currentStatusOption();
+
+            return statusOption ? statusOption.badge_classes : 'bg-slate-100 text-slate-600 ring-slate-200';
         }
     }"
     class="space-y-8"

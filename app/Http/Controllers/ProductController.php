@@ -29,8 +29,6 @@ class ProductController extends Controller
 
         return view('products.index', [
             'productStatusOptions' => ProductStatus::options(),
-            'productStatusLabels' => $this->productStatusLabels(),
-            'productStatusBadgeClasses' => $this->productStatusBadgeClasses(),
             'products' => $products,
         ]);
     }
@@ -39,8 +37,6 @@ class ProductController extends Controller
     {
         return view('products.create', [
             'productStatusOptions' => ProductStatus::options(),
-            'productStatusLabels' => $this->productStatusLabels(),
-            'productStatusBadgeClasses' => $this->productStatusBadgeClasses(),
         ]);
     }
 
@@ -64,8 +60,6 @@ class ProductController extends Controller
         return view('products.edit', [
             'product' => $product,
             'productStatusOptions' => ProductStatus::options(),
-            'productStatusLabels' => $this->productStatusLabels(),
-            'productStatusBadgeClasses' => $this->productStatusBadgeClasses(),
         ]);
     }
 
@@ -111,19 +105,5 @@ class ProductController extends Controller
         if ($product->image !== null) {
             Storage::disk('public')->delete($product->image);
         }
-    }
-
-    private function productStatusLabels(): array
-    {
-        return collect(ProductStatus::options())
-            ->pluck('label', 'value')
-            ->all();
-    }
-
-    private function productStatusBadgeClasses(): array
-    {
-        return collect(ProductStatus::options())
-            ->pluck('badge_classes', 'value')
-            ->all();
     }
 }
