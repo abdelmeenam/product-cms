@@ -63,7 +63,7 @@ php artisan storage:link
 9. Start the local development environment:
 
 ```bash
-composer run dev
+php artisan serve
 ```
 
 ## Running Tests
