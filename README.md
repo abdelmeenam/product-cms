@@ -166,11 +166,9 @@ With two more days, I would focus on the areas that make the system closer to a 
 
 ## Weakest Part of My Submission
 
-The weakest part is the business logic depth.
+The weakest part is probably the order workflow.
 
-The project has a clean base, but it is not a full production back office yet. Areas like inventory reservation, refunds, tax, customer lifecycle, discounts, permissions, and invoices are still basic or not implemented.
-
-I made this tradeoff intentionally because I did not want to hardcode rules without asking the client first. So I would describe this version as a strong starting point, not a complete commercial system.
+Right now, the system gives a good overview of products, orders, and sales, but it does not go very deep into what happens after an order is placed. Orders can be viewed and analyzed, but there is still no full flow for moving an order through its stages and updating stock based on that.
 
 ## Time Spent
 
